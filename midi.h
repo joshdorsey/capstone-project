@@ -1,6 +1,8 @@
 #ifndef MIDI_H
 #define MIDI_H
 
+#include <cstdint> // uint8_t
+
 #define NOTE_OFF   0x80
 #define NOTE_ON    0x90
 #define KEY_PRESS  0xA0
@@ -9,7 +11,7 @@
 #define CHAN_PRESS 0xD0
 #define PITCH_BEND 0xE0
 
-#define STATUS_BYTE(type, channel) (type + (channel & 0x0F))
+#define STATUS_BYTE(type, channel) (uint8_t)(type + (channel & 0x0F))
 
 namespace midi {
     typedef struct {
@@ -18,33 +20,11 @@ namespace midi {
         uint8_t data2;
     } MidiMessage;
 
-    MidiMessage noteOn(uint8_t channel, uint8_t note, uint8_t vel) {
-        // Limit channel to 4 bits
-        channel &= 0x0F;
-        // Limit note to 7 bits
-        note &= 0x7F;
-        // Limit velocity to 7 bits
-        vel &= 0x7F;
-        return { STATUS_BYTE(NOTE_ON, channel), note, vel };
-    }
+    MidiMessage noteOn(uint8_t channel, uint8_t note, uint8_t vel);
     
-    MidiMessage noteOff(uint8_t channel, uint8_t note) {
-        // Limit channel to 4 bits
-        channel &= 0x0F;
-        // Limit note to 7 bits
-        note &= 0x7F;
-        return { STATUS_BYTE(NOTE_OFF, channel), note, 0x00 };
-    }
+    MidiMessage noteOff(uint8_t channel, uint8_t note);
     
-    MidiMessage noteOff(uint8_t channel, uint8_t note, uint8_t vel) {
-        // Limit channel to 4 bits
-        channel &= 0x0F;
-        // Limit note to 7 bits
-        note &= 0x7F;
-        // Limit velocity to 7 bits
-        vel &= 0x7F;
-        return { STATUS_BYTE(NOTE_OFF, channel), note, vel };
-    }
+    MidiMessage noteOff(uint8_t channel, uint8_t note, uint8_t vel);
 };
 
 #endif // midi.h

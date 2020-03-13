@@ -4,7 +4,13 @@ project(Capstone VERSION 0.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_executable(Capstone main.cpp)
+add_executable(Capstone
+	main.cpp
+	MidiDispatch.h
+	MidiDispatch.cpp
+	midi.h
+	midi.cpp
+	timing.h)
 add_library(rtmidi-4.0.0 STATIC
             "${PROJECT_SOURCE_DIR}/rtmidi-4.0.0/RtMidi.cpp"
             "${PROJECT_SOURCE_DIR}/rtmidi-4.0.0/RtMidi.h")

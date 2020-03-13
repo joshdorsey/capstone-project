@@ -73,7 +73,7 @@ namespace timing {
         return error_val;
     }
     
-    _INLINEFUNC double stop(const string &timer) {
+    double __forceinline stop(const string &timer) {
         return end(timer);
     }
 
