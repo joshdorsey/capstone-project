@@ -5,7 +5,7 @@ namespace capstone {
 		return a.time > b.time;
 	}
 
-	MidiDispatch::MidiDispatch(microseconds minDelta, unsigned int port) : minDelta(minDelta) {
+	MidiDispatch::MidiDispatch(unsigned int port) : safetyTime(5ms) {
 		midiOut = new RtMidiOut();
 		midiOut->openPort(port);
 		running = false;
@@ -42,63 +42,82 @@ namespace capstone {
 	}
 
 	void MidiDispatch::enqueue(time_t time, midi::MidiMessage message) {
-		std::lock_guard<std::mutex> lock(queueMutex);
 		DispatchItem item = { time, { message } };
+		queueMutex.lock();
 		queue.push(item);
 		queueDirty = true;
+		queueMutex.unlock();
 	}
 
 	void MidiDispatch::enqueue(time_t time, std::initializer_list<midi::MidiMessage> messages) {
-		std::lock_guard<std::mutex> lock(queueMutex);
 		DispatchItem item = { time, messages };
+		queueMutex.lock();
 		queue.push(item);
 		queueDirty = true;
+		queueMutex.unlock();
 	}
 
 	void MidiDispatch::dispatchLoop() {
-		std::lock_guard<std::mutex> lock(queueMutex);
-		while (running || !queue.empty()) {
-			if (queue.empty()) {
-				std::this_thread::sleep_for(minDelta);
+		// Only enter the loop if running is true
+		bool queueEmpty = true;
+
+		while (running || !queueEmpty) {
+			queueMutex.lock();
+			queueEmpty = queue.empty();
+			queueMutex.unlock();
+
+			if (queueEmpty) {
+				std::this_thread::sleep_for(safetyTime);
 				continue;
 			}
 
 			if (flush) {
+				queueMutex.lock();
 				while (!queue.empty()) queue.pop();
+				queueMutex.unlock();
+				flush = false;
 				continue;
 			}
 
-			time_t startDispatch = high_resolution_clock::now();
+			queueMutex.lock();
 			DispatchItem top = this->getTop();
-			while (!queue.empty() && startDispatch > top.time) {
+
+			// Wait until we're within a small margin of time of what's on top of the queue
+			while (!queueEmpty && high_resolution_clock::now()-safetyTime > top.time) {
+				// Spin until we need to dispatch
+				while (high_resolution_clock::now() < top.time);
+
 				dispatch(top);
 
 				queue.pop();
 				queueDirty = true;
 
-				if (!queue.empty()) {
+				queueEmpty = queue.empty();
+
+				if (!queueEmpty) {
 					top = this->getTop();
 				}
 			}
 
-			time_t endDispatch = high_resolution_clock::now();
-			std::this_thread::sleep_for(minDelta - (endDispatch - startDispatch));
+			queueEmpty = queue.empty();
+			queueMutex.unlock();
+
+			std::this_thread::sleep_until(top.time-safetyTime*2);
 		}
 	}
 
 	void MidiDispatch::dispatch(DispatchItem item) {
 		for (midi::MidiMessage msg : item.msg) {
-			std::vector<uint8_t> out = { msg.status };
-
 			if (msg.data1 < 0x80) {
-				out.push_back(msg.data1);
-
 				if (msg.data2 < 0x80) {
-					out.push_back(msg.data2);
+					midiOut->sendMessage((uint8_t*)(&msg), 3);
+				} else {
+					midiOut->sendMessage((uint8_t*)(&msg), 2);
 				}
 			}
-
-			midiOut->sendMessage(&out);
+			else {
+				midiOut->sendMessage((uint8_t*)(&msg), 1);
+			}
 		}
 	}
 

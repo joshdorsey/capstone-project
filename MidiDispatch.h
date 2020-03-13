@@ -10,13 +10,14 @@
 #include "RtMidi.h"
 #include "midi.h"
 
-using std::chrono::microseconds;
-using std::chrono::duration;
-using std::chrono::high_resolution_clock;
-using std::chrono::time_point;
-using std::priority_queue;
-
 namespace capstone {
+    using std::chrono::milliseconds;
+    using std::chrono::high_resolution_clock;
+    using std::chrono::time_point;
+    using std::priority_queue;
+
+    using namespace std::chrono_literals;
+
     typedef high_resolution_clock::time_point time_t;
 
     typedef struct {
@@ -26,7 +27,7 @@ namespace capstone {
 
     class MidiDispatch {
     public:
-        MidiDispatch(microseconds minDelta, unsigned int port);
+        MidiDispatch(unsigned int port);
         ~MidiDispatch();
         void start();
         void stop();
@@ -36,14 +37,17 @@ namespace capstone {
         void enqueue(time_t time, std::initializer_list<midi::MidiMessage> messages);
         
     private:
-        bool running;
-        bool flush;
-        microseconds minDelta;
+        std::atomic<bool> running;
+        std::atomic<bool> flush;
+        std::atomic<bool> queueDirty;
+
+        milliseconds safetyTime;
         RtMidiOut* midiOut;
+
         std::mutex queueMutex;
         std::priority_queue<DispatchItem> queue;
+        
         DispatchItem queueTop;
-        std::atomic<bool> queueDirty;
         std::thread dispatchThread;
         
         void dispatchLoop();

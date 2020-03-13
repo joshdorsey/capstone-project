@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 #include "RtMidi.h"
 #include "config.h"
 #include "timing.h"
@@ -7,8 +8,9 @@
 using std::cout;
 using std::cin;
 using capstone::MidiDispatch;
-using std::chrono::seconds;
-using std::chrono::milliseconds;
+
+using namespace std::chrono_literals;
+using std::chrono::high_resolution_clock;
 
 int main() {
     RtMidiOut* out = new RtMidiOut();
@@ -27,10 +29,9 @@ int main() {
     cout << "> ";
     cin >> port;
 
-    MidiDispatch dispatch(microseconds(500), port);
+    MidiDispatch dispatch(port);
     dispatch.start();
 
-    timing::start("Building Queue");
     capstone::time_t now = high_resolution_clock::now();
     dispatch.enqueue(now, {
         midi::noteOn(1, 80, 64),
@@ -38,7 +39,7 @@ int main() {
         midi::noteOn(1, 87, 64),
     });
 
-    dispatch.enqueue(now + seconds(1), {
+    dispatch.enqueue(now + 1s, {
         midi::noteOff(1, 80),
         midi::noteOff(1, 84),
         midi::noteOff(1, 87),
@@ -47,7 +48,7 @@ int main() {
         midi::noteOn(1, 85, 64),
     });
 
-    dispatch.enqueue(now + seconds(2), {
+    dispatch.enqueue(now + 2s, {
         midi::noteOff(1, 78),
         midi::noteOff(1, 82),
         midi::noteOff(1, 85),
@@ -56,7 +57,7 @@ int main() {
         midi::noteOn(1, 84, 64),
     });
 
-    dispatch.enqueue(now + seconds(3), {
+    dispatch.enqueue(now + 3s, {
         midi::noteOff(1, 77),
         midi::noteOff(1, 81),
         midi::noteOff(1, 84),
@@ -64,25 +65,18 @@ int main() {
 
     uint8_t note = 40;
 
-    now += seconds(3);
+    now += 3s;
     for (unsigned int i = 0; i < 20; i++) {
         note += 2;
-        dispatch.enqueue(now + (milliseconds(50) * i), {
+        dispatch.enqueue(now + (50ms * i), {
             midi::noteOn(1, note, 64),
             midi::noteOff(1, note - 2),
         });
     }
 
-    dispatch.enqueue(now + (milliseconds(50) * 20), midi::noteOff(1, note));
-    timing::end("Building Queue");
+    dispatch.enqueue(now + (50ms * 20), midi::noteOff(1, note));
 
-    cout << "Playing notes...\n";
-
-    timing::start("Waiting for Dispatch to Stop");
     dispatch.stop();
-    timing::end("Waiting for Dispatch to Stop");
-
-    timing::printSummary(cout);
 
     return 0;
 }
