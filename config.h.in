@@ -1,0 +1,2 @@
+#define VERSION_MAJOR @Capstone_VERSION_MAJOR@
+#define VERSION_MINOR @Capstone_VERSION_MINOR@
