@@ -6,6 +6,7 @@
 #include <mutex>
 #include <queue>
 #include <chrono>
+#include <condition_variable>
 
 #include "RtMidi.h"
 #include "midi.h"
@@ -15,8 +16,6 @@ namespace capstone {
     using std::chrono::high_resolution_clock;
     using std::chrono::time_point;
     using std::priority_queue;
-
-    using namespace std::chrono_literals;
 
     typedef high_resolution_clock::time_point time_t;
 
@@ -39,7 +38,7 @@ namespace capstone {
     private:
         std::atomic<bool> running;
         std::atomic<bool> flush;
-        std::atomic<bool> queueDirty;
+        std::atomic<bool> topDirty;
 
         milliseconds safetyTime;
         RtMidiOut* midiOut;

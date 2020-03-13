@@ -1,11 +1,13 @@
 #include "MidiDispatch.h"
 
 namespace capstone {
+	using namespace std::chrono_literals;
+
 	bool operator<(const DispatchItem& a, const DispatchItem& b) {
 		return a.time > b.time;
 	}
 
-	MidiDispatch::MidiDispatch(unsigned int port) : safetyTime(5ms) {
+	MidiDispatch::MidiDispatch(unsigned int port) : safetyTime(1ms) {
 		midiOut = new RtMidiOut();
 		midiOut->openPort(port);
 		running = false;
@@ -45,7 +47,7 @@ namespace capstone {
 		DispatchItem item = { time, { message } };
 		queueMutex.lock();
 		queue.push(item);
-		queueDirty = true;
+		topDirty = true;
 		queueMutex.unlock();
 	}
 
@@ -53,13 +55,12 @@ namespace capstone {
 		DispatchItem item = { time, messages };
 		queueMutex.lock();
 		queue.push(item);
-		queueDirty = true;
+		topDirty = true;
 		queueMutex.unlock();
 	}
 
 	void MidiDispatch::dispatchLoop() {
-		// Only enter the loop if running is true
-		bool queueEmpty = true;
+		bool queueEmpty = false;
 
 		while (running || !queueEmpty) {
 			queueMutex.lock();
@@ -82,15 +83,16 @@ namespace capstone {
 			queueMutex.lock();
 			DispatchItem top = this->getTop();
 
-			// Wait until we're within a small margin of time of what's on top of the queue
-			while (!queueEmpty && high_resolution_clock::now()-safetyTime > top.time) {
+			// Wait until we're to what's on top of the queue
+			if (high_resolution_clock::now()+safetyTime > top.time) {
+				std::cout << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				// Spin until we need to dispatch
 				while (high_resolution_clock::now() < top.time);
 
+				std::cout << "\t" << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				dispatch(top);
-
 				queue.pop();
-				queueDirty = true;
+				topDirty = true;
 
 				queueEmpty = queue.empty();
 
@@ -102,7 +104,7 @@ namespace capstone {
 			queueEmpty = queue.empty();
 			queueMutex.unlock();
 
-			std::this_thread::sleep_until(top.time-safetyTime*2);
+			std::this_thread::yield();
 		}
 	}
 
@@ -122,10 +124,10 @@ namespace capstone {
 	}
 
 	DispatchItem MidiDispatch::getTop() {
-		if (queueDirty) {
+		if (topDirty) {
 			queueTop = queue.top();
 
-			queueDirty = false;
+			topDirty = false;
 		}
 
 		return queueTop;

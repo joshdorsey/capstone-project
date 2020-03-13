@@ -32,14 +32,14 @@ int main() {
     MidiDispatch dispatch(port);
     dispatch.start();
 
-    capstone::time_t now = high_resolution_clock::now();
-    dispatch.enqueue(now, {
+    capstone::time_t start = high_resolution_clock::now();
+    dispatch.enqueue(start + 1s, {
         midi::noteOn(1, 80, 64),
         midi::noteOn(1, 84, 64),
         midi::noteOn(1, 87, 64),
     });
 
-    dispatch.enqueue(now + 1s, {
+    dispatch.enqueue(start + 2s, {
         midi::noteOff(1, 80),
         midi::noteOff(1, 84),
         midi::noteOff(1, 87),
@@ -48,7 +48,7 @@ int main() {
         midi::noteOn(1, 85, 64),
     });
 
-    dispatch.enqueue(now + 2s, {
+    dispatch.enqueue(start + 3s, {
         midi::noteOff(1, 78),
         midi::noteOff(1, 82),
         midi::noteOff(1, 85),
@@ -57,7 +57,7 @@ int main() {
         midi::noteOn(1, 84, 64),
     });
 
-    dispatch.enqueue(now + 3s, {
+    dispatch.enqueue(start + 4s, {
         midi::noteOff(1, 77),
         midi::noteOff(1, 81),
         midi::noteOff(1, 84),
@@ -65,16 +65,16 @@ int main() {
 
     uint8_t note = 40;
 
-    now += 3s;
+    start += 4s;
     for (unsigned int i = 0; i < 20; i++) {
         note += 2;
-        dispatch.enqueue(now + (50ms * i), {
+        dispatch.enqueue(start + (500ms * i), {
             midi::noteOn(1, note, 64),
             midi::noteOff(1, note - 2),
         });
     }
 
-    dispatch.enqueue(now + (50ms * 20), midi::noteOff(1, note));
+    dispatch.enqueue(start + (500ms * 20), midi::noteOff(1, note));
 
     dispatch.stop();
 
