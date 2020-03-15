@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 using std::chrono::high_resolution_clock;
 
 int main() {
-    RtMidiOut* out = new RtMidiOut();
+    RtMidiOut* portInfo = new RtMidiOut();
     
     cout << "Capstone Project (";
     cout << VERSION_MAJOR << "." << VERSION_MINOR;
@@ -21,9 +21,11 @@ int main() {
 
     cout << "The following MIDI Outputs are available:\n";
 
-    for (unsigned int i = 0; i < out->getPortCount(); i++) {
-        cout << i << ")\t" << out->getPortName(i) << "\n";
+    for (unsigned int i = 0; i < portInfo->getPortCount(); i++) {
+        cout << i << ")\t" << portInfo->getPortName(i) << "\n";
     }
+
+    delete portInfo;
 
     unsigned int port;
     cout << "> ";
@@ -33,50 +35,32 @@ int main() {
     dispatch.start();
 
     capstone::time_t start = high_resolution_clock::now();
-    dispatch.enqueue(start + 1s, {
-        midi::noteOn(1, 80, 64),
-        midi::noteOn(1, 84, 64),
-        midi::noteOn(1, 87, 64),
-    });
+    uint8_t startNote = 60;
+    uint8_t lastNote = startNote;
+    auto noteLength = 100ms;
+    uint8_t offset = 0;
+    uint8_t noteNum = 25;
+    int8_t stride = 9;
 
-    dispatch.enqueue(start + 2s, {
-        midi::noteOff(1, 80),
-        midi::noteOff(1, 84),
-        midi::noteOff(1, 87),
-        midi::noteOn(1, 78, 64),
-        midi::noteOn(1, 82, 64),
-        midi::noteOn(1, 85, 64),
-    });
-
-    dispatch.enqueue(start + 3s, {
-        midi::noteOff(1, 78),
-        midi::noteOff(1, 82),
-        midi::noteOff(1, 85),
-        midi::noteOn(1, 77, 64),
-        midi::noteOn(1, 81, 64),
-        midi::noteOn(1, 84, 64),
-    });
-
-    dispatch.enqueue(start + 4s, {
-        midi::noteOff(1, 77),
-        midi::noteOff(1, 81),
-        midi::noteOff(1, 84),
-    });
-
-    uint8_t note = 40;
-
-    start += 4s;
-    for (unsigned int i = 0; i < 20; i++) {
-        note += 2;
-        dispatch.enqueue(start + (500ms * i), {
-            midi::noteOn(1, note, 64),
-            midi::noteOff(1, note - 2),
+    for (unsigned int i = 0; i < noteNum; i++) {
+        offset += stride;
+        offset %= 19;
+        
+        dispatch.enqueue(start + (noteLength * i), {
+            midi::noteOn(1, startNote + offset, 64),
+            midi::noteOff(1, lastNote),
         });
+
+        lastNote = startNote + offset;
     }
 
-    dispatch.enqueue(start + (500ms * 20), midi::noteOff(1, note));
+    dispatch.enqueue(start + (noteLength * noteNum), midi::noteOff(1, lastNote));
+
+    cout << "Playing Notes... ";
 
     dispatch.stop();
+
+    cout << "done.\n";
 
     return 0;
 }

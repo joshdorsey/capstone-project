@@ -8,7 +8,7 @@ namespace capstone {
 	}
 
 	MidiDispatch::MidiDispatch(unsigned int port) : safetyTime(1ms) {
-		midiOut = new RtMidiOut();
+		midiOut = make_unique<RtMidiOut>();
 		midiOut->openPort(port);
 		running = false;
 		flush = false;
@@ -85,11 +85,11 @@ namespace capstone {
 
 			// Wait until we're to what's on top of the queue
 			if (high_resolution_clock::now()+safetyTime > top.time) {
-				std::cout << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
+				//std::cout << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				// Spin until we need to dispatch
 				while (high_resolution_clock::now() < top.time);
 
-				std::cout << "\t" << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
+				//std::cout << "\t" << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				dispatch(top);
 				queue.pop();
 				topDirty = true;
