@@ -53,7 +53,6 @@ namespace capstone {
         
         void dispatchLoop();
         void dispatch(DispatchItem item);
-        DispatchItem getTop();
     };
 }
 

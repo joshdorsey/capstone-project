@@ -56,10 +56,10 @@ int main() {
 
     dispatch.enqueue(start + (noteLength * noteNum), midi::noteOff(1, lastNote));
 
+    dispatch.enqueue(start + (noteLength * noteNum) + 10ms, midi::noteOn(1, 100, 127));
+
     cout << "Playing Notes... ";
-
     dispatch.stop();
-
     cout << "done.\n";
 
     return 0;

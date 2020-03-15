@@ -47,7 +47,6 @@ namespace capstone {
 		DispatchItem item = { time, { message } };
 		queueMutex.lock();
 		queue.push(item);
-		topDirty = true;
 		queueMutex.unlock();
 	}
 
@@ -55,7 +54,6 @@ namespace capstone {
 		DispatchItem item = { time, messages };
 		queueMutex.lock();
 		queue.push(item);
-		topDirty = true;
 		queueMutex.unlock();
 	}
 
@@ -81,23 +79,20 @@ namespace capstone {
 			}
 
 			queueMutex.lock();
-			DispatchItem top = this->getTop();
+			DispatchItem top = queue.top();
 
 			// Wait until we're to what's on top of the queue
 			if (high_resolution_clock::now()+safetyTime > top.time) {
-				//std::cout << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				// Spin until we need to dispatch
 				while (high_resolution_clock::now() < top.time);
 
-				//std::cout << "\t" << std::chrono::duration_cast<std::chrono::microseconds>(top.time - high_resolution_clock::now()).count() << "us\n";
 				dispatch(top);
 				queue.pop();
-				topDirty = true;
 
 				queueEmpty = queue.empty();
 
 				if (!queueEmpty) {
-					top = this->getTop();
+					top = queue.top();
 				}
 			}
 
@@ -121,15 +116,5 @@ namespace capstone {
 				midiOut->sendMessage((uint8_t*)(&msg), 1);
 			}
 		}
-	}
-
-	DispatchItem MidiDispatch::getTop() {
-		if (topDirty) {
-			queueTop = queue.top();
-
-			topDirty = false;
-		}
-
-		return queueTop;
 	}
 };
