@@ -12,7 +12,7 @@
 #include "RtMidi.h"
 #include "midi.h"
 
-namespace capstone {
+namespace midi {
     using std::chrono::milliseconds;
     using std::chrono::high_resolution_clock;
     using std::priority_queue;

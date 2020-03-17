@@ -1,13 +1,13 @@
 #include <iostream>
 #include <cstdlib>
-#include "RtMidi.h"
+#include <RtMidi.h>
+#include <midi/MidiDispatch.h>
+#include <timing.h>
 #include "config.h"
-#include "timing.h"
-#include "MidiDispatch.h"
 
 using std::cout;
 using std::cin;
-using capstone::MidiDispatch;
+using midi::MidiDispatch;
 
 using namespace std::chrono_literals;
 using std::chrono::high_resolution_clock;
@@ -34,7 +34,7 @@ int main() {
     MidiDispatch dispatch(port);
     dispatch.start();
 
-    capstone::time_t start = high_resolution_clock::now();
+    midi::time_t start = high_resolution_clock::now();
     uint8_t startNote = 60;
     uint8_t lastNote = startNote;
     auto noteLength = 100ms;

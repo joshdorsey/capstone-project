@@ -98,7 +98,7 @@ class RTMIDI_DLL_PUBLIC RtMidiError : public std::exception
     : message_(message), type_(type) {}
 
   //! The destructor.
-  virtual ~RtMidiError( void ) throw() {}
+  virtual ~RtMidiError( void ) noexcept {}
 
   //! Prints thrown error message to stderr.
   virtual void printMessage( void ) const throw() { std::cerr << '\n' << message_ << "\n\n"; }

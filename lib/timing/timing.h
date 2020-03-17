@@ -30,7 +30,7 @@ namespace timing {
     using std::setprecision;
     using std::fixed;
 
-    namespace {
+    namespace details {
         typedef pair<time_point<high_resolution_clock>,
                      time_point<high_resolution_clock>> time_pair;
 
@@ -51,9 +51,19 @@ namespace timing {
 
             return error_val;
         }
+
+        double get(const string& timer) {
+            if (timer_exists(timer)) {
+                return get_time(timing_map[timer]);
+            }
+
+            return error_val;
+        }
     }
 
     void start(const string &timer) {
+        using namespace details;
+
         auto now = high_resolution_clock::now();
         timing_map[timer] = make_pair(now, now - seconds(1));
         
@@ -63,6 +73,8 @@ namespace timing {
     }
 
     double end(const string &timer) {
+        using namespace details;
+
         auto now = high_resolution_clock::now();
         if(timer_exists(timer)) {
             timing_map[timer].second = now;
@@ -78,6 +90,8 @@ namespace timing {
     }
 
     double get(const string &timer) {
+        using namespace details;
+
         if(timer_exists(timer)) {
             return get_time(timing_map[timer]);
         }
@@ -86,6 +100,8 @@ namespace timing {
     }
     
     void printSummary(ostream &stream) {
+        using namespace details;
+
         for(auto i = timing_map.rbegin(); i != timing_map.rend(); i++) {
             double time = get_time(i->second);
             if(time != error_val) {

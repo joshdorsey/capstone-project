@@ -1,6 +1,6 @@
 #include "MidiDispatch.h"
 
-namespace capstone {
+namespace midi {
 	using namespace std::chrono_literals;
 
 	bool operator<(const DispatchItem& a, const DispatchItem& b) {
